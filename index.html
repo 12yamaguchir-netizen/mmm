@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>デイトレ管理（PWA）</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-title">デイトレ管理</div>
+    <div class="app-sub">オフラインOK / 端末内保存（localStorage）</div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>入力</h2>
+
+      <div class="grid">
+        <label class="field">
+          <span>銘柄コード</span>
+          <input id="code" inputmode="numeric" autocomplete="off" placeholder="例：7203" />
+        </label>
+
+        <label class="field">
+          <span>銘柄名（任意）</span>
+          <input id="name" autocomplete="off" placeholder="例：トヨタ" />
+        </label>
+
+        <label class="field">
+          <span>買株価</span>
+          <input id="buyPrice" inputmode="decimal" autocomplete="off" placeholder="例：2500" />
+        </label>
+
+        <label class="field">
+          <span>買株数</span>
+          <input id="buyQty" inputmode="numeric" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>売株価</span>
+          <input id="sellPrice" inputmode="decimal" autocomplete="off" placeholder="例：2550" />
+        </label>
+
+        <label class="field">
+          <span>売株数</span>
+          <input id="sellQty" inputmode="numeric" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>手数料（任意）</span>
+          <input id="fee" inputmode="decimal" autocomplete="off" placeholder="例：0" />
+        </label>
+
+        <div class="field readonly">
+          <span>確定損益（自動）</span>
+          <output id="pl">0</output>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnCalc" class="btn">計算</button>
+        <button id="btnSave" class="btn primary">売却_履歴へ移動（保存）</button>
+        <button id="btnClear" class="btn ghost">入力クリア</button>
+      </div>
+
+      <p class="hint">
+        仕様：①保存後も買株数・売株数はデフォルト100に戻ります。②エンター移動：銘柄コード→買株価、買株数→売株価。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>今日の確定損益合計</h2>
+      <div class="today">
+        <div class="today-value" id="todaySum">0</div>
+        <div class="today-sub" id="todayLabel"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>履歴</h2>
+      <div class="history-actions">
+        <button id="btnExport" class="btn">CSV出力</button>
+        <button id="btnDeleteAll" class="btn danger ghost">全削除</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" aria-label="履歴一覧">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>コード</th>
+              <th>銘柄名</th>
+              <th class="num">買</th>
+              <th class="num">買数</th>
+              <th class="num">売</th>
+              <th class="num">売数</th>
+              <th class="num">手数料</th>
+              <th class="num">確定損益</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>ホーム画面に追加すると“アプリ”として使えます。</span>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+/* iOS/ iPadOSでも見やすい、白背景・余白大きめ */
+:root{
+  --bg:#ffffff;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#666;
+  --border:#e6e6e6;
+  --shadow: 0 6px 22px rgba(0,0,0,.06);
+  --radius: 14px;
+  --pad: 14px;
+  --tap: 48px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 10px;
+}
+
+.app-title{ font-size: 18px; font-weight: 700; }
+.app-sub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.container{
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 14px 12px 40px;
+  display: grid;
+  gap: 14px;
+}
+
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+h2{
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 720px){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+.field{
+  display: grid;
+  gap: 6px;
+}
+.field span{
+  font-size: 12px;
+  color: var(--muted);
+}
+.field input{
+  height: var(--tap);
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  outline: none;
+  background: #fff;
+}
+.field input:focus{
+  border-color: #c8c8c8;
+}
+
+.field.readonly output{
+  height: var(--tap);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  font-size: 16px;
+}
+
+.actions{
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn{
+  height: var(--tap);
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 15px;
+}
+.btn:active{ transform: translateY(1px); }
+
+.btn.primary{
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+.btn.ghost{
+  background: transparent;
+}
+.btn.danger{
+  border-color: #ff3b30;
+  color: #ff3b30;
+}
+
+.hint{
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.today{
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.today-value{
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+.today-sub{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.table-wrap{
+  overflow:auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  background:#fff;
+}
+.table th, .table td{
+  border-bottom: 1px solid var(--border);
+  padding: 10px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.table th{
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.table td.num, .table th.num{ text-align: right; }
+.table tr:last-child td{ border-bottom: none; }
+
+.icon-btn{
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.footer{
+  padding: 14px 16px 24px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}

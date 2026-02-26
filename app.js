@@ -1,12 +1,7 @@
 // ========= 初期銘柄マスタ（未設定なら投入） =========
-// ※ここに Book2.xlsx の内容を入れていましたが、GitHub上で「コード全体」を貼る用途では
-//   サイズが大きくなりすぎる可能性があるため、まずは空でも動く形にしています。
-//   あなたが「Book2.xlsxの全銘柄をここに埋め込め」と命令された場合は、ここへ展開します。
-(function preloadMaster(){
+(function(){
   const key = "daytrade_master_v1";
-  if (!localStorage.getItem(key)) {
-    localStorage.setItem(key, JSON.stringify({}));
-  }
+  if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({}));
 })();
 
 // ========= Service Worker =========
@@ -44,10 +39,26 @@ function uid(){
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
 
+// 入力欄：1000円単位でコンマ（カーソル維持）
+function formatCommaInput(el){
+  const start = el.selectionStart ?? 0;
+  const before = el.value;
+  const raw = before.replace(/[^\d]/g, "");
+  if (raw === "") { el.value = ""; return; }
+  const n = Number(raw);
+  const after = n.toLocaleString("ja-JP");
+
+  // カーソル補正（ざっくり）
+  const diff = after.length - before.length;
+  el.value = after;
+  const next = Math.max(0, Math.min(after.length, start + diff));
+  try { el.setSelectionRange(next, next); } catch {}
+}
+
 // ========= Storage =========
 const KEY_SETTINGS = "daytrade_settings_v1";
-const KEY_HISTORY = "daytrade_history_v1";
-const KEY_MASTER  = "daytrade_master_v1";
+const KEY_HISTORY  = "daytrade_history_v1";
+const KEY_MASTER   = "daytrade_master_v1";
 
 function loadSettings(){
   const raw = localStorage.getItem(KEY_SETTINGS);
@@ -58,25 +69,19 @@ function loadSettings(){
   }
   try { return JSON.parse(raw); } catch { return { tpPct:1.0, slPct:1.0, lossLimit:10000 }; }
 }
-function saveSettings(s){
-  localStorage.setItem(KEY_SETTINGS, JSON.stringify(s));
-}
+function saveSettings(s){ localStorage.setItem(KEY_SETTINGS, JSON.stringify(s)); }
 function loadHistory(){
   const raw = localStorage.getItem(KEY_HISTORY);
   if (!raw) return [];
   try { return JSON.parse(raw); } catch { return []; }
 }
-function saveHistory(h){
-  localStorage.setItem(KEY_HISTORY, JSON.stringify(h));
-}
+function saveHistory(h){ localStorage.setItem(KEY_HISTORY, JSON.stringify(h)); }
 function loadMaster(){
   const raw = localStorage.getItem(KEY_MASTER);
   if (!raw) return {};
   try { return JSON.parse(raw); } catch { return {}; }
 }
-function saveMaster(m){
-  localStorage.setItem(KEY_MASTER, JSON.stringify(m));
-}
+function saveMaster(m){ localStorage.setItem(KEY_MASTER, JSON.stringify(m)); }
 
 // ========= Elements =========
 const els = {
@@ -136,11 +141,7 @@ function calcPL(){
   return pl;
 }
 
-// ④ 損切ライン：画像の式
-// P1 = E*(100-x)%
-// P2 = E - (R/Q)
-// P = max(P1,P2)
-// ただし R<=0 のときは P2 無効
+// 損切ライン：画像の式（P=max(P1,P2)、R<=0はP2無効）
 function calcLines(){
   const buyP = parseNum(els.buyPrice.value);
   const s = loadSettings();
@@ -189,7 +190,6 @@ function renderTotals(){
 
   els.todaySum.textContent = fmt(sum);
 
-  // 損失限度額まで（利益で上乗せ）
   const s = loadSettings();
   const L = parseNum(s.lossLimit);
   if (!L){
@@ -215,7 +215,6 @@ function resetInputs(keepCode){
   els.buyPrice.value = "";
   els.sellPrice.value = "";
   els.fee.value = "";
-  // ① 保存後もデフォルト100
   els.buyQty.value = "100";
   els.sellQty.value = "100";
   els.pl.textContent = "0";
@@ -254,7 +253,7 @@ function addRecord(){
   saveHistory(hist);
 
   render();
-  // ③ 保存で銘柄コードもクリア
+  // 保存で銘柄コードもクリア
   resetInputs(false);
 }
 
@@ -264,7 +263,7 @@ function deleteRecord(id){
   render();
 }
 
-// ① 履歴「編集」（デザインはテーブルのまま）
+// 履歴編集
 function openEditRow(id){
   const hist = loadHistory();
   const r = hist.find(x => x.id === id);
@@ -358,9 +357,8 @@ function renderHistory(){
 function exportCsv(){
   const header = ["日時","コード","銘柄名","株数","取得単価","売却単価","売数","確定損益"];
   const hist = loadHistory();
-  const rows = hist.map(r => [
-    r.datetime, r.code, r.name, r.qty, r.buyPrice, r.sellPrice, r.sellQty, r.pl
-  ]);
+  const rows = hist.map(r => [r.datetime, r.code, r.name, r.qty, r.buyPrice, r.sellPrice, r.sellQty, r.pl]);
+
   const toCsv = (arr) =>
     arr.map(row => row.map(v => {
       const s = String(v ?? "");
@@ -413,6 +411,12 @@ function init(){
   if (!els.buyQty.value) els.buyQty.value = "100";
   if (!els.sellQty.value) els.sellQty.value = "100";
 
+  // 1000円単位でコンマ（買株価/売株価/手数料/損失限度額）
+  [els.buyPrice, els.sellPrice, els.fee, els.lossLimit].forEach(el => {
+    el.addEventListener("input", () => formatCommaInput(el));
+    el.addEventListener("blur",  () => { if (el.value) el.value = fmt(el.value); });
+  });
+
   // input calc live
   ["buyPrice","buyQty","sellPrice","sellQty","fee"].forEach(id => {
     $(id).addEventListener("input", () => { calcPL(); calcLines(); renderTotals(); });
@@ -421,18 +425,12 @@ function init(){
   // code autofill
   els.code.addEventListener("input", () => { tryAutofillName(); });
 
-  // ② Enter移動
+  // Enter移動
   els.code.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      els.buyPrice.focus();
-    }
+    if (e.key === "Enter"){ e.preventDefault(); els.buyPrice.focus(); }
   });
   els.buyQty.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      els.sellPrice.focus();
-    }
+    if (e.key === "Enter"){ e.preventDefault(); els.sellPrice.focus(); }
   });
 
   // buttons
@@ -462,13 +460,18 @@ function init(){
   const s = loadSettings();
   els.tpPct.value = s.tpPct;
   els.slPct.value = s.slPct;
-  els.lossLimit.value = s.lossLimit;
+  els.lossLimit.value = fmt(s.lossLimit);
 
-  els.btnToggleSettings.addEventListener("click", () => {
-    els.settingsCard.hidden = !els.settingsCard.hidden;
-    if (!els.settingsCard.hidden) renderMaster();
-  });
-  els.btnSettingsBack.addEventListener("click", () => { els.settingsCard.hidden = true; });
+  // 設定へ行けない事故を防止（nullチェック）
+  if (els.btnToggleSettings && els.settingsCard){
+    els.btnToggleSettings.addEventListener("click", () => {
+      els.settingsCard.hidden = !els.settingsCard.hidden;
+      if (!els.settingsCard.hidden) renderMaster();
+    });
+  }
+  if (els.btnSettingsBack && els.settingsCard){
+    els.btnSettingsBack.addEventListener("click", () => { els.settingsCard.hidden = true; });
+  }
 
   els.btnSaveSettings.addEventListener("click", () => {
     const ns = {
@@ -477,6 +480,7 @@ function init(){
       lossLimit: parseNum(els.lossLimit.value)
     };
     saveSettings(ns);
+    els.lossLimit.value = fmt(ns.lossLimit);
     render();
   });
 
@@ -534,8 +538,9 @@ function init(){
 
   els.btnMasterReset.addEventListener("click", () => {
     localStorage.removeItem(KEY_MASTER);
-    preloadMaster();
+    localStorage.setItem(KEY_MASTER, JSON.stringify({}));
     renderMaster();
+    tryAutofillName();
   });
 
   render();

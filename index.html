@@ -11,11 +11,74 @@
 </head>
 <body>
   <header class="app-header">
-    <div class="app-title">デイトレ管理</div>
-    <div class="app-sub">オフラインOK / 端末内保存（localStorage）</div>
+    <div class="header-row">
+      <div>
+        <div class="app-title">デイトレ管理</div>
+        <div class="app-sub">オフラインOK / 端末内保存（利益で損失許容額が増える）</div>
+      </div>
+      <button id="btnToggleSettings" class="btn small">設定</button>
+    </div>
   </header>
 
   <main class="container">
+    <!-- 設定 -->
+    <section class="card" id="settingsCard" hidden>
+      <h2>設定</h2>
+
+      <div class="grid">
+        <label class="field">
+          <span>損失限度額（1日あたり・円）</span>
+          <input id="lossLimit" inputmode="numeric" autocomplete="off" placeholder="例：5000" />
+        </label>
+
+        <label class="field">
+          <span>利確（%）</span>
+          <input id="tpPct" inputmode="decimal" autocomplete="off" placeholder="例：0.8" />
+        </label>
+
+        <label class="field">
+          <span>損切り（%）</span>
+          <input id="slPct" inputmode="decimal" autocomplete="off" placeholder="例：0.5" />
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="btnSaveSettings" class="btn primary">設定を保存</button>
+      </div>
+
+      <hr class="sep" />
+
+      <h3 class="h3">銘柄マスタ（コード→銘柄名）</h3>
+      <div class="grid">
+        <label class="field">
+          <span>銘柄コード</span>
+          <input id="mCode" inputmode="numeric" autocomplete="off" placeholder="例：7203" />
+        </label>
+        <label class="field">
+          <span>銘柄名</span>
+          <input id="mName" autocomplete="off" placeholder="例：トヨタ" />
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btnAddMaster" class="btn">追加</button>
+        <button id="btnClearMaster" class="btn danger ghost">マスタ全削除</button>
+      </div>
+
+      <div class="table-wrap" style="margin-top:10px">
+        <table class="table" aria-label="銘柄マスタ">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>銘柄名</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="masterBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 入力 -->
     <section class="card">
       <h2>入力</h2>
 
@@ -26,34 +89,39 @@
         </label>
 
         <label class="field">
-          <span>銘柄名（任意）</span>
+          <span>銘柄名（自動）</span>
           <input id="name" autocomplete="off" placeholder="例：トヨタ" />
         </label>
 
         <label class="field">
-          <span>買株価</span>
+          <span>取得単価（買株価）</span>
           <input id="buyPrice" inputmode="decimal" autocomplete="off" placeholder="例：2500" />
         </label>
 
         <label class="field">
-          <span>買株数</span>
+          <span>株数（買い株数）</span>
           <input id="buyQty" inputmode="numeric" autocomplete="off" />
         </label>
 
         <label class="field">
-          <span>売株価</span>
+          <span>売却単価（売株価）</span>
           <input id="sellPrice" inputmode="decimal" autocomplete="off" placeholder="例：2550" />
         </label>
 
         <label class="field">
-          <span>売株数</span>
+          <span>売数</span>
           <input id="sellQty" inputmode="numeric" autocomplete="off" />
         </label>
 
-        <label class="field">
-          <span>手数料（任意）</span>
-          <input id="fee" inputmode="decimal" autocomplete="off" placeholder="例：0" />
-        </label>
+        <div class="field readonly">
+          <span>利確ライン（自動）</span>
+          <output id="tpLine">-</output>
+        </div>
+
+        <div class="field readonly">
+          <span>損切りライン（自動）</span>
+          <output id="slLine">-</output>
+        </div>
 
         <div class="field readonly">
           <span>確定損益（自動）</span>
@@ -68,18 +136,28 @@
       </div>
 
       <p class="hint">
-        仕様：①保存後も買株数・売株数はデフォルト100に戻ります。②エンター移動：銘柄コード→買株価、買株数→売株価。
+        仕様：①保存後も「株数」「売数」はデフォルト100に戻ります。②エンター移動：銘柄コード→取得単価、株数→売却単価。
       </p>
     </section>
 
+    <!-- 今日 -->
     <section class="card">
-      <h2>今日の確定損益合計</h2>
-      <div class="today">
-        <div class="today-value" id="todaySum">0</div>
-        <div class="today-sub" id="todayLabel"></div>
+      <h2>今日</h2>
+      <div class="today-grid">
+        <div class="today-box">
+          <div class="today-label">今日の確定損益合計</div>
+          <div class="today-value" id="todaySum">0</div>
+          <div class="today-sub" id="todayLabel"></div>
+        </div>
+        <div class="today-box">
+          <div class="today-label">損失限度額まで</div>
+          <div class="today-value" id="remainLoss">-</div>
+          <div class="today-sub" id="lossHint"></div>
+        </div>
       </div>
     </section>
 
+    <!-- 履歴 -->
     <section class="card">
       <h2>履歴</h2>
       <div class="history-actions">
@@ -94,11 +172,10 @@
               <th>日時</th>
               <th>コード</th>
               <th>銘柄名</th>
-              <th class="num">買</th>
-              <th class="num">買数</th>
-              <th class="num">売</th>
+              <th class="num">株数</th>
+              <th class="num">取得単価</th>
+              <th class="num">売却単価</th>
               <th class="num">売数</th>
-              <th class="num">手数料</th>
               <th class="num">確定損益</th>
               <th></th>
             </tr>
@@ -110,7 +187,7 @@
   </main>
 
   <footer class="footer">
-    <span>ホーム画面に追加すると“アプリ”として使えます。</span>
+    <span>Safariで開いたあと「共有 → ホーム画面に追加」でアプリ化できます。</span>
   </footer>
 
   <script src="app.js"></script>

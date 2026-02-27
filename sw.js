@@ -1,12 +1,10 @@
-const CACHE_NAME = "daytrade-pwa-v8";
+const CACHE_NAME = "daytrade-pwa-v9";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css",
-  "./app.js",
-  "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./style.css?v=9",
+  "./app.js?v=9",
+  "./manifest.json"
 ];
 
 self.addEventListener("install", (event) => {
